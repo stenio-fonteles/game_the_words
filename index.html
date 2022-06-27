@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@200&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@200&display=swap" rel="stylesheet">
+    <title>Document</title>
+</head>
+<body >
+<style>
+    
+    #chooseTime {
+        text-align: center;
+        margin: 20px;
+        font-family: 'Oxanium', cursive;
+    }
+    .cronometro{
+        border: none;
+        width: 60px;
+        height: 20px;
+        background-color: black;
+        color:red;
+    }
+    #text {
+        padding-bottom: 30px;
+        font-size: 40px;
+        font-family: 'Oswald', sans-serif;
+        text-align: center;
+        padding-top: 60px;
+    }
+    #inputValue{
+        border: none;
+        border-bottom: 1px solid black;
+        outline: 0;
+    }
+
+    #all {
+        position: absolute;
+        top:50%;
+        left: 50%;
+        transform: translate(-50%,-50%);
+    }
+   
+    #scoreboard {
+        left: 50%;
+        position: absolute;
+        transform: translate(-50%);
+        color: red;
+        background-color: black;
+        width: 300px;
+        height: auto;
+        border-radius: 10px;
+        font-family: 'Oxanium', cursive;
+      
+        text-align: center;
+    }
+
+    #time   p{
+       margin-bottom: 0;
+    }
+    #time div{
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        
+        
+        
+    }
+    #placar{
+        display: flex;
+        flex-direction: row;
+        justify-content: space-around;
+    }
+    #placar p{
+      margin-top: 0;
+    }
+
+   #minuto,#segundo {
+        font-size: 30px;
+   }
+   #finish {
+    position: absolute;
+    bottom: 20%;
+    left: 50%;
+    transform: translate(-25%);
+    display: none;
+    width: 200px;
+   }
+
+</style>
+<div id="body2">
+    <div id="chooseTime">
+        <p>ESCOLHA O TEMPO</p>
+        <button class="cronometro">0:30</button>
+        <button class="cronometro">1:00</button>
+        <button class="cronometro">5:00</button>
+    </div>
+        <div id="all">
+            <h2 id="text">INICIAR</h2>
+            <input id="inputValue"> </input>
+        </div>
+        <div id="scoreboard">
+            <div id="time">
+                <p>Tempo</p>
+                <div>
+                    <p id="clock">00</p>
+                </div>
+            </div>
+            <div id="placar">
+                <div>
+                    <p>WIN</p>
+                    <h1 id="win"></h1>
+                </div>
+                <div>
+                    <p>LOSS</p>
+                    <h1 id="err"></h1>
+                </div>
+            </div>
+        </div>
+    <div id="finish">
+        <h1>FINISH</h1>
+        <p></p>
+    </div>
+       
+</div>
+
+<script >
+    let choosedWord = '';
+    let seconTime = 30;
+    const lorem = []
+    const valueInput = document.getElementById('inputValue');
+    const words = document.getElementById('text');
+    const stopwatch = document.getElementsByClassName('cronometro')
+    const win = document.getElementById('win');
+    const err = document.getElementById('err');
+    const score = {
+        win: 0,
+        lost: 0,
+    }
+
+    async  function findWords() {
+        const responseWord = await fetch('https://api.dicionario-aberto.net/random');
+        const randonWord  =  await responseWord.json()
+        lorem.push(randonWord.word)
+       // console.log(randonWord.word)
+    }
+    
+    
+    function selectTime(value){
+        const newTime = document.getElementById('clock');
+        const teste = parseInt(value)
+        seconTime = teste * 60;
+        newTime.innerHTML = value
+    }
+
+    let segundos = seconTime;
+    let interval;
+    function setIntervalTimer(penalty) {
+        clearInterval(interval)
+
+        console.log(penalty)
+        if(penalty) segundos -= penalty
+
+        interval = setInterval(() => {
+            segundos--;
+            if(segundos <= 0){
+                clearInterval(interval)
+                document.getElementById('finish').style.display = 'inline';
+                valueInput.style.display = 'none';
+            }
+
+            drawTimer(segundos)
+        }, 1000)
+    }
+    valueInput.addEventListener('click', () => setIntervalTimer(0))
+    
+    function drawTimer(time) {
+        document.getElementById('clock').innerHTML = time
+    }
+    
+    function drawScore() {
+        const {win: winScore, lost: lostScore} = score;
+
+        win.innerHTML = winScore
+        err.innerHTML = lostScore
+    }
+
+    function drawNextWord() {
+        const nextWord = lorem.shift().toUpperCase();
+        words.innerHTML = nextWord;
+        choosedWord = nextWord;
+    }
+
+    function addPoint(scoreType) {
+        score[scoreType] += 1;
+
+        drawScore();
+    }
+
+    function correctAnswer(word) {
+        const isEqual = word.toUpperCase() === choosedWord;
+
+        return isEqual;
+    }
+
+    function resetInput() {
+        valueInput.value = '';
+    }
+
+    
+   async function initGame() {
+       await findWords()     
+        for(const time of stopwatch) {
+            time.addEventListener('click', (event) => {
+                return selectTime(event.target.innerHTML)
+            } )
+        }
+        drawScore()
+        drawNextWord()
+        drawTimer(0)
+    }
+    initGame();
+
+    valueInput.addEventListener("change", async (event) => {
+        const word = event.target.value;
+        const isCorrect = correctAnswer(word)
+        await findWords()
+        words.style.color = isCorrect ? 'green' : 'red';
+        setIntervalTimer(isCorrect ? 0 : 2)
+        addPoint(isCorrect ? 'win' : 'lost')
+        resetInput()
+        drawNextWord()
+    });
+</script> 
+</body>
+</html>
